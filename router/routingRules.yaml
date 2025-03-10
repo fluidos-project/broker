@@ -1,0 +1,6 @@
+- clientA:
+    name: clientA
+    requirements:
+    - 100.1.K
+    - 100.1.Z
+    - 100.1.J

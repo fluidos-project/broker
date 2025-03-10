@@ -1,14 +1,10 @@
 ---
+- localAgent : 
+    name : localAgent
 - userA :
     name : clientA
-    write : Tier1
-    read : Tier1
 - userB :
     name : clientB
-    write : Tier1
-    read : Tier1
 # - userC : 
 #     name : clientC
-#     write : Tier3
-#     read : Tier3
 ...

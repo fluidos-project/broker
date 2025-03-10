@@ -1,0 +1,15 @@
+- clientA:
+    ip: 172.18.0.6:30000
+    latency: 100
+    throughput: 10
+    zone: K
+- clientB:
+    ip: null
+    latency: 20
+    throughput: 200
+    zone: Z
+- clientC:
+    ip: null
+    latency: 30
+    throughput: 300
+    zone: P

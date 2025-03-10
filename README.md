@@ -30,27 +30,39 @@ We use RSA 2048-bit encryption, and example configurations are provided below.
 ## User & Queue Configuration
 
 Some scripts rely on `rabbitmqadmin`, so ensure that an administrator user is properly configured and that the default "guest" user is restricted to localhost access only.  
-  
-From the `users.yaml` configuration, clients publish to the same exchange but use distinct routing keys, which correspond to their Common Name (CN) in their certificate.
-These routing keys determine message distribution across tiers (which act as exchanges).
-Each client is subscribed to its own private queue, which receives messages routed from the relevant tiers.  
-  
-The `setup.sh` script automates the setup of queues, permissions, exchanges, and bindings as defined in `users.yaml`.
-Client certificates and private keys, ensuring each client can authenticate securely.  
-  
-The `eraseRabbit.sh` script removes all queues, bindings, exchanges, and users, except for the default "guest" user, ensuring continued access via `rabbitmqadmin`.  
-  
-The `deleteUserBindings.sh` script removes all the bindings for the user passed as argument.  
-  
-Once the setup is over it it is possible to refine the configuration with specific `rabbitmqctl` and `rabbitmqadmin` commands to create more bindings.  
-Previously issued certificates will continue to function as expected.  
 
-## Message Routing & Permissions
+Users are defined in `users.yaml` and created via `setup.sh` along with their permissions.  
+Each client has a dedicated queue receiving messages from `routing_exchange` and publishes to `advertisement_exchange` (aggregates node IPs) and `rules_exchange` (informs the broker of filtering criteria). Messages are routed accordingly.
 
-Each client can publish only using its assigned routing key to the defaultPeeringExchange and can subscribe only to its private queue.  
-Clients are categorized into four arbitrary tiers for message routing.
+`LocalAgent` consists of two classes: `RulesManager` managing rules, and `RoutingManager` managing the advertisements. 
 
-### A simple schema that illustrates a possible broker architecture
+`metrics.sh` updates node latency to every known client every 2 minutes in `metrics.yaml` and `RoutingManager` reads this to generate routing keys. If a client IP changes it updates both the file and the bindings.  
+
+Before the `RulesManager` sets up bindings, an ERP API validates client access to specific data.  
+
+Client authentication is secured via certificates.  
+
+`eraseRabbit.sh` removes all queues, bindings, exchanges, and users, except guest, and `deleteUserBindings.sh` removes all bindings for a given client.  
+
+After setup, additional bindings can be configured via rabbitmqctl/rabbitmqadmin.  
+Previously issued certificates remain valid.
+
+## Message format and routing
+
+Two types of messages are published on the exchanges.  
+The announcement contains the FLUIDOS node ID, including the IP. 
+
+The rule is a string representing the latency, bandwidth and geographical zones desired by the sender: the format is like:  
+`100.1.K-Z-J`  
+Where 100 is the maximum latency accepted in milliseconds, 1 is the minimum bandwidth accepted in Mbps and K, Z, J represent some geographical zones.  
+
+This rule is translated to three different bingding keys that will be applied with `rabbitmqctl`:     
+    - 100.1.K  
+    - 100.1.Z  
+    - 100.1.J  
+If any message from the announcements has a routing key matching one of these bindings, that message will be routed to the queue of the client which sent the rule.
+
+### A schema that illustrates broker's architecture
 
 <p align="center">
 <img src="./docs/images/broker_server.jpg"/>
@@ -80,3 +92,9 @@ Clients are categorized into four arbitrary tiers for message routing.
     ├─ setup.sh
     ├─ cert_gen.sh
     ├─ eraseRabbit.sh
+    ├─ deleteUserBindings.sh
+    ├─ router/
+    │  ├─ metrics.sh
+    │  ├─ metrics.yaml
+    │  ├─ router.py
+    │  ├─ routingRules.yaml

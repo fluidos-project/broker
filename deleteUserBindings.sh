@@ -15,11 +15,11 @@ BINDINGS=$(rabbitmqadmin list bindings source destination routing_key -f tsv)
 while IFS=$'\t' read -r SOURCE DESTINATION ROUTING_KEY; do
     # check if USR_NAME is contained in a destination or routing key
     if [[ "$ROUTING_KEY" == *"$USR_NAME"* ]]; then
-        echo "Remove binding: Exchange '$SOURCE' → Queue '$DESTINATION' with Routing Key '$ROUTING_KEY'..."
+        echo "Remove binding: Exchange '$SOURCE' - Queue '$DESTINATION' with Routing Key '$ROUTING_KEY'..."
         rabbitmqadmin delete binding source="$SOURCE" destination="$DESTINATION" destination_type="exchange" properties_key="$ROUTING_KEY"
     fi
     if [[ "$DESTINATION" == *"$USR_NAME"* ]]; then
-    echo "Remove binding: Exchange '$SOURCE' → Queue '$DESTINATION' with Routing Key '$ROUTING_KEY'..."
+    echo "Remove binding: Exchange '$SOURCE' - Queue '$DESTINATION' with Routing Key '$ROUTING_KEY'..."
         rabbitmqadmin delete binding source="$SOURCE" destination="$DESTINATION" destination_type="queue"
     fi
 
