@@ -1,0 +1,10 @@
+---
+- broker_router :
+    name : broker_router
+- userA :
+    name : clientA
+- userB :
+     name : clientB
+# - userC : 
+#     name : clientC
+...
