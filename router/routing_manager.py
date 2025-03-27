@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 import config
 import utils
+import importlib
 
 class RoutingManager:
     def __init__(self):
@@ -14,22 +15,6 @@ class RoutingManager:
         """Verify permissions on ERP"""
         # Your code here
         return True
-
-    # def update_metrics(self, client_name, ip):
-    #     """Update metrics for new client publishing"""
-    #     metrics = utils.load_yaml_with_lock(config.metrics_file, config.metrics_lock_file)
-    #     found = False
-
-    #     for entry in metrics:
-    #         if client_name in entry:
-    #             entry[client_name]['ip'] = ip
-    #             utils.save_yaml_with_lock(config.metrics_file, config.metrics_lock_file, metrics)
-    #             found = True
-    #             break
-    #     if not found:
-    #         metrics.append({client_name: {'ip': ip, 'latency': None, 'throughput': None, 'zone': None}})
-    #         utils.save_yaml_with_lock(config.metrics_file, config.metrics_lock_file, metrics)
-    #         print(f"[@] New client added {client_name} IP: {ip}")
 
 
     def update_metrics(self, client_name, body):
@@ -46,30 +31,29 @@ class RoutingManager:
     
 
     def forge_routingkey(self, message):
-        """Build the routing key from metrics and rule requirements"""
+        """Build the routing key from metrics and rules requirements"""
 
         routing_parts = []
+        #rule_keys = []
+
         for rule in config.requirements_array:
 
             print(f"RULE {rule}")
             print(f"MESSAGE {message}")
+            result=True
+            for key in rule.keys():
+                module_name = f"{config.comparator_module_path}.{key}"
 
-
-            if not self.check_api(rule["sender"]):
-                print(f"API failed {rule["sender"]}")
-                continue
-            #verify that all the keys of the rule are contained in the message
-            subset_keys_ok = rule.keys()<=message.keys()
-            latency_ok = int(rule["MAXlatency"]) >= int(message['latency'])
-            bandwidth_ok = int(rule["MINbandwidth"]) <= int(message['bandwidth'])
-
-            for location in rule["locations"]:
-                location_ok = location == message["location"]
-                if location_ok: break
-
-            if latency_ok and bandwidth_ok and location_ok: #and subset_keys_ok:
+                # Dinamic Import
+                try:
+                    comparator_module = importlib.import_module(module_name)
+                except ModuleNotFoundError:
+                    #if the broker has not the comparator for that KEY, messages will not be routed to the owner of that rule 
+                    comparator_module = importlib.import_module(f"{config.comparator_module_path}.default")
+                result = result and (comparator_module.comparator.compare(rule[key], message))
+            if result:
                 routing_parts.append(rule["sender"])
-                break
+
         return '.'.join(routing_parts)
 
 
