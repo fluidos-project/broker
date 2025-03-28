@@ -1,7 +1,6 @@
 
 import config
 import ssl
-from filelock import FileLock
 import pika
 import logging
 
@@ -17,16 +16,11 @@ connection_params = pika.ConnectionParameters(
 publisher_conn = pika.BlockingConnection(connection_params)
 publisher_channel = publisher_conn.channel()
 
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
-metric_log = logging.getLogger("metric_logger")
-metric_handler = logging.FileHandler(config.metrics_file)
-metric_handler.setLevel(logging.DEBUG)
-metric_handler.setFormatter(formatter)
-metric_log.addHandler(metric_handler)
+logging.basicConfig(
+    filename=config.log_file,
+    level=logging.INFO,  # (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
-rule_log = logging.getLogger("rule_logger")
-rule_handler = logging.FileHandler(config.rules_file)
-rule_handler.setLevel(logging.DEBUG)
-rule_handler.setFormatter(formatter)
-rule_log.addHandler(rule_handler)

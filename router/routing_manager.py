@@ -9,7 +9,7 @@ class RoutingManager:
     def __init__(self):
         self.input_queue = 'announcements_queue'
         self.output_exchange = 'routing_exchange'
-        metrics = ""
+
 
     def check_api(self, client):
         """Verify permissions on ERP"""
@@ -34,25 +34,21 @@ class RoutingManager:
         """Build the routing key from metrics and rules requirements"""
 
         routing_parts = []
-        #rule_keys = []
-
-        for rule in config.requirements_array:
-
-            print(f"RULE {rule}")
-            print(f"MESSAGE {message}")
+        for rule in config.rules_array:
+            #print(f"RULE {rule}")
+            #print(f"MESSAGE {message}")
             result=True
             for key in rule.keys():
                 module_name = f"{config.comparator_module_path}.{key}"
-
                 # Dinamic Import
                 try:
                     comparator_module = importlib.import_module(module_name)
                 except ModuleNotFoundError:
-                    #if the broker has not the comparator for that KEY, messages will not be routed to the owner of that rule 
+                    #if metric in rule has not comparator use default
                     comparator_module = importlib.import_module(f"{config.comparator_module_path}.default")
                 result = result and (comparator_module.comparator.compare(rule[key], message))
             if result:
-                routing_parts.append(rule["sender"])
+                routing_parts.append(rule.get("sender"))
 
         return '.'.join(routing_parts)
 
@@ -69,8 +65,8 @@ class RoutingManager:
             utils.publisher_channel.basic_publish(exchange=self.output_exchange, routing_key=routing_key, body=body)
             current_time = datetime.now()
             print(f"[@] ROUTING {current_time} Sender: {sender} - Received: {message} - Routing Key: {routing_key}")
-            utils.metric_log.info(json.dumps(message))
-            #utils.metric_log.flush() 
+            utils.logging.info(f"ROUTING {json.dumps(message)}")
+
         except Exception as e:
             print(f"[@] Error in announcements callback: {e}")
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
