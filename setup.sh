@@ -43,7 +43,7 @@ for user in "${!users_array[@]}"; do
   rabbitmqadmin declare queue name=${users_array[$user]}
   rabbitmqadmin declare binding source="routing_exchange" destination="${users_array[$user]}" routing_key="#.""${users_array[$user]}"".#" destination_type="queue" 
 
-    #writing permission on default exchange with its route key and reading permission on its queue
+    #writing permission on exchanges and reading permission on its own queue
   
   if [ ${users_array[$user]} = "broker_router" ]; then
     echo "setting broker_router permissions"

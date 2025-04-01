@@ -18,10 +18,10 @@ class RulesManager:
             if message["sender"] == rule["sender"]:
                 config.rules_array.remove(rule)
         config.rules_array.append(message)
-        #print(f"[@] Added {message}")
 
 
     def callback(self, ch, method, properties, body):
+        """Callback."""
         try:
             """Update rules_array with the new rule."""
             sender = properties.user_id
@@ -37,19 +37,18 @@ class RulesManager:
             self.update_rules(data)
             utils.logging.info(f"RULE {json.dumps(data)}")
 
-            ch.basic_ack(delivery_tag=method.delivery_tag)
         except Exception as e:
-            print(f"[@] Error in rule message: {e}")
+            print(f"[@] Error in rules callback: {e}")
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 
     def start(self):
-        """Queue subscription."""
-        connection = pika.BlockingConnection(utils.connection_params)
-        channel = connection.channel()
+        """Subscrition to queue."""
 
-        channel.queue_declare(queue=self.input_queue, durable=True)
-        channel.basic_consume(queue=self.input_queue, on_message_callback=self.callback)
+        consumer_conn = pika.BlockingConnection(utils.connection_params)
+        consumer_channel = consumer_conn.channel()
+        consumer_channel.queue_declare(queue=self.input_queue, durable=True)
+        consumer_channel.basic_consume(queue=self.input_queue, on_message_callback=self.callback, auto_ack=True)
 
-        print("[@] Witing for new rules...")
-        channel.start_consuming()
+        print("[@] Waiting for new rules...")
+        consumer_channel.start_consuming()

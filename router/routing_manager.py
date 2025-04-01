@@ -57,12 +57,17 @@ class RoutingManager:
         """Callback."""
         try:
             sender = properties.user_id
+            
             message = json.loads(body)
-            message["sender"]=sender
+                #nested JSON
+            while(type(message)!=dict):
+                message = json.loads(message)
 
+            message["sender"]=sender
+            #ch.basic_ack(delivery_tag=method.delivery_tag)
             routing_key = self.forge_routingkey(message)
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-            utils.publisher_channel.basic_publish(exchange=self.output_exchange, routing_key=routing_key, body=body)
+            properties = pika.BasicProperties(expiration='30000')
+            utils.publisher_channel.basic_publish(exchange=self.output_exchange, routing_key=routing_key, body=body, properties=properties)
             current_time = datetime.now()
             print(f"[@] ROUTING {current_time} Sender: {sender} - Received: {message} - Routing Key: {routing_key}")
             utils.logging.info(f"ROUTING {json.dumps(message)}")
@@ -74,10 +79,17 @@ class RoutingManager:
 
     def start(self):
         """Subscrition to queue."""
+        
+        #while True:
+            #try:
         consumer_conn = pika.BlockingConnection(utils.connection_params)
         consumer_channel = consumer_conn.channel()
         consumer_channel.queue_declare(queue=self.input_queue, durable=True)
-        consumer_channel.basic_consume(queue=self.input_queue, on_message_callback=self.callback)
+        consumer_channel.basic_consume(queue=self.input_queue, on_message_callback=self.callback, auto_ack=True)
 
         print("[@] Waiting for new announcements...")
         consumer_channel.start_consuming()
+
+            #except Exception as e:
+            #    print(f" [!] Error: {e}. Restarting in 5 seconds")
+            #    time.sleep(2)

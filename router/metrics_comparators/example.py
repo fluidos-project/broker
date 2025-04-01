@@ -7,6 +7,7 @@ class ExampleComparator(BaseComparator):
 
         #if example key is not found in message, .get() returns value
         #so comparator always returns True
+
         return value == message.get('example', value)
 
 comparator = ExampleComparator()
