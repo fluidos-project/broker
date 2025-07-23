@@ -6,3 +6,4 @@ router/updater.py
 logs/
 __pycache__
 metrics_comparators/__pycache__
+venv*

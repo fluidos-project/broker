@@ -37,6 +37,8 @@ class RulesManager:
             self.update_rules(data)
             utils.logging.info(f"RULE {json.dumps(data)}")
 
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+
         except Exception as e:
             print(f"[@] Error in rules callback: {e}")
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
@@ -48,7 +50,7 @@ class RulesManager:
         consumer_conn = pika.BlockingConnection(utils.connection_params)
         consumer_channel = consumer_conn.channel()
         consumer_channel.queue_declare(queue=self.input_queue, durable=True)
-        consumer_channel.basic_consume(queue=self.input_queue, on_message_callback=self.callback, auto_ack=True)
+        consumer_channel.basic_consume(queue=self.input_queue, on_message_callback=self.callback, auto_ack=False)
 
         print("[@] Waiting for new rules...")
         consumer_channel.start_consuming()

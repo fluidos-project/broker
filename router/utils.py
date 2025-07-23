@@ -11,11 +11,9 @@ connection_params = pika.ConnectionParameters(
     config.host,
     ssl_options=pika.SSLOptions(context=ssl_context),
     credentials=pika.credentials.ExternalCredentials(),
+    heartbeat=60,
+    blocked_connection_timeout=120,
 )
-
-publisher_conn = pika.BlockingConnection(connection_params)
-publisher_channel = publisher_conn.channel()
-
 
 logging.basicConfig(
     filename=config.log_file,
