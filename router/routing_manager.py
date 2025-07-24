@@ -10,8 +10,8 @@ class RoutingManager:
     def __init__(self):
         self.input_queue = 'announcements_queue'
         self.output_exchange = 'routing_exchange'
-        self.publisher = Publisher(config.host, self.output_exchange)
-
+        self.publisher = Publisher(self.output_exchange)
+#config.host,
 
     def check_api(self, client):
         """Verify permissions on ERP"""
